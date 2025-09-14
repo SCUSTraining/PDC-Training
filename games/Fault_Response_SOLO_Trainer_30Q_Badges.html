@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fault-Response SOLO Trainer — 30Q + Badges</title>
+<style>
+  :root{
+    --ink:#0b1a3a; --panel:#0e2250; --tile:#0a2a63; --accent:#3b82f6; --ok:#10b981; --bad:#ef4444; --muted:#94a3b8;
+    --bronze:#cd7f32; --silver:#c0c0c0; --gold:#ffd700;
+  }
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--ink);color:#fff;margin:0}
+  header{background:var(--panel);padding:16px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  h1{font-size:20px;margin:0}
+  .mode{display:flex;gap:6px;flex-wrap:wrap}
+  .btn{background:var(--accent);border:none;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#475569}
+  .btn.ghost{background:transparent;border:1px solid #3b82f6}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .card{background:#0a1f49;border-radius:16px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .title{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .badge{background:#1e3a8a;padding:6px 10px;border-radius:999px;font-size:12px}
+  .clue{font-size:22px;line-height:1.35;margin-top:10px}
+  .answer,.hint{margin-top:14px;padding:12px;background:#071a3b;border-left:4px solid var(--accent);border-radius:8px;display:none}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+  .opt{background:var(--tile);border-radius:12px;padding:12px;cursor:pointer;border:2px solid transparent}
+  .opt.correct{border-color:var(--ok)}
+  .opt.wrong{border-color:var(--bad)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .note{font-size:12px;color:var(--muted)}
+  .bar{height:10px;background:#0b3;border-radius:999px;width:0%;transition:width .3s}
+  .bar-wrap{background:#083;height:10px;border-radius:999px;overflow:hidden}
+  .kpi{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .pill{background:#0f2a5c;border-radius:999px;padding:6px 10px}
+  .hidden{display:none}
+  .mc-warning{font-size:12px;opacity:.85}
+  .badges{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+  .badge-card{background:#0a2355;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px}
+  .medal{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
+  .medal.none{background:#243b6b}
+  .medal.bronze{background:var(--bronze)}
+  .medal.silver{background:var(--silver);color:#111}
+  .medal.gold{background:var(--gold);color:#111}
+  .badge-name{font-weight:800}
+  .badge-level{font-size:12px;opacity:.9}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Fault-Response SOLO Trainer — 30Q + Badges</h1>
+    <div class="mode">
+      <button class="btn" id="studyBtn">Study (Flashcards)</button>
+      <button class="btn" id="practiceBtn">Practice (MC)</button>
+      <button class="btn" id="examBtn">Exam (30 Q)</button>
+      <button class="btn secondary" id="resetBtn">Reset Progress</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card" id="setupCard">
+      <div class="title">
+        <div><strong>Pick what to study</strong></div>
+        <div><span class="badge">Mastery badges update automatically</span></div>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label>Category:
+          <select id="catSel"><option value="All">All</option></select>
+        </label>
+        <label>Include values ≥
+          <select id="minVal">
+            <option>100</option><option>200</option><option>300</option><option>400</option><option>500</option>
+          </select>
+        </label>
+        <label>Shuffle <input type="checkbox" id="shuffle" checked></label>
+        <label>Timer (Practice/Exam) <input type="checkbox" id="timer" checked></label>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn" id="startStudy">Start Study</button>
+        <button class="btn" id="startPractice">Start Practice</button>
+        <button class="btn" id="startExam">Start Exam (30)</button>
+      </div>
+      <div id="badgesPanel" class="badges"></div>
+      <p class="note">Hotkeys: 1–4 answer • H hint • A answer • N next • P prev</p>
+    </div>
+
+    <div class="card hidden" id="sessionCard">
+      <div class="title">
+        <div class="kpi">
+          <span class="badge" id="modeBadge">Mode</span>
+          <span class="pill" id="catBadge"></span>
+          <span class="pill" id="countBadge"></span>
+          <span class="pill">Score: <span id="score">0</span></span>
+          <span class="pill" id="timerPill" style="display:none;">Time: <span id="time">20</span>s</span>
+        </div>
+        <div class="row">
+          <button class="btn secondary" id="prevBtn">◀ Prev</button>
+          <button class="btn secondary" id="nextBtn">Next ▶</button>
+          <button class="btn ghost" id="backBtn">Back</button>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="badge" id="pathBadge"></div>
+      </div>
+      <div class="clue" id="clue"></div>
+      <div class="answer" id="answer"></div>
+      <div class="hint" id="hint"></div>
+
+      <div id="mcArea" class="grid hidden"></div>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="btn" id="showAnswer">Show Answer</button>
+        <button class="btn secondary" id="showHint">Hint</button>
+        <button class="btn" id="markEasy">I knew it</button>
+        <button class="btn secondary" id="markHard">I missed it</button>
+      </div>
+      <p class="note mc-warning hidden" id="mcNote">Multiple choice: pick one answer. If timer is on, unanswered = incorrect.</p>
+    </div>
+
+    <div class="card hidden" id="summaryCard">
+      <h3>Session Summary</h3>
+      <p><strong>Mode:</strong> <span id="sumMode"></span></p>
+      <p><strong>Score:</strong> <span id="sumScore"></span></p>
+      <p><strong>Correct:</strong> <span id="sumRight"></span> • <strong>Wrong:</strong> <span id="sumWrong"></span></p>
+      <div id="missedList"></div>
+      <h4 style="margin-top:14px;">Mastery Badges</h4>
+      <div id="badgesSummary" class="badges"></div>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" id="retryMissed">Retry Missed</button>
+        <button class="btn secondary" id="finishBtn">Finish</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====== 30-question deck (6 categories × 5 values) ======
+   You can edit these or replace with your own bank later.
+*/
+const DATA = [
+  // ---------- Robotics ----------
+  {id:"Robotics|100|1",category:"Robotics",value:100,clue:"Robot not in AUTO; cycle won’t start.",answer:"What is switch to AUTO on the teach pendant and press Cycle Start after clearing faults?",hint:"Manual/Teach mode blocks auto run."},
+  {id:"Robotics|200|2",category:"Robotics",value:200,clue:"Pendant E-stop was pressed earlier.",answer:"What is release the E-stop, reset controller faults, then Start?",hint:"E-stop reset ≠ fault reset—do both."},
+  {id:"Robotics|300|3",category:"Robotics",value:300,clue:"Gate opened; robot in HOLD.",answer:"What is close/lock the gate, confirm safety fence OK, then resume?",hint:"Look for safety channels ON."},
+  {id:"Robotics|400|4",category:"Robotics",value:400,clue:"Program paused waiting for light curtain reset.",answer:"What is clear the area, reset the curtain, then press Start?",hint:"Guarding must be safe and reset."},
+  {id:"Robotics|500|5",category:"Robotics",value:500,clue:"Robot collided; needs recovery.",answer:"What is use the controller’s recovery to jog to a safe pose, verify zero, then resume?",hint:"Follow OEM collision/recovery steps."},
+
+  // ---------- Hydraulics ----------
+  {id:"Hydraulics|100|6",category:"Hydraulics",value:100,clue:"Pump runs but no pressure builds.",answer:"What is check motor contactor, low-oil switch, prime the pump if needed?",hint:"Air in suction or low oil = no pressure."},
+  {id:"Hydraulics|200|7",category:"Hydraulics",value:200,clue:"Hydraulic overheat alarm.",answer:"What is verify cooler flow/fan, clean filters, reduce bypassing?",hint:"Hot oil often = low flow or fouled cooler."},
+  {id:"Hydraulics|300|8",category:"Hydraulics",value:300,clue:"Actuators drift at rest.",answer:"What is inspect for internal leakage and check holding/relief valves?",hint:"Leaky valve → drift."},
+  {id:"Hydraulics|400|9",category:"Hydraulics",value:400,clue:"Pressure spikes during cycle.",answer:"What is verify relief setpoint and sticky checks; add snubbers if specified?",hint:"Relief/accumulator issues cause spikes."},
+  {id:"Hydraulics|500|10",category:"Hydraulics",value:500,clue:"Cavitation noise from pump.",answer:"What is check oil level, suction strainer, and for air leaks on suction side?",hint:"Aeration/cavitation growls."},
+
+  // ---------- HMI Errors ----------
+  {id:"HMI Errors|100|11",category:"HMI Errors",value:100,clue:"HMI says “Machine not homed.”",answer:"What is run the homing sequence (Locking → Injection → Ejector → Aux)?",hint:"Home order matters."},
+  {id:"HMI Errors|200|12",category:"HMI Errors",value:200,clue:"“Part not present” sensor fault.",answer:"What is check sensor power/position, clean the target, and verify I/O state on HMI?",hint:"Look at the input live."},
+  {id:"HMI Errors|300|13",category:"HMI Errors",value:300,clue:"Alarms persist after reset.",answer:"What is remove the root cause, acknowledge, then reset interlocks?",hint:"Many alarms latch until cause is gone."},
+  {id:"HMI Errors|400|14",category:"HMI Errors",value:400,clue:"Wrong job/recipe loaded.",answer:"What is load the correct recipe and verify critical setpoints before start?",hint:"Recipe mismatch interlocks."},
+  {id:"HMI Errors|500|15",category:"HMI Errors",value:500,clue:"PLC/HMI comms lost.",answer:"What is check network/power, re-establish PLC run state and HMI handshake?",hint:"Look for comm OK bits."},
+
+  // ---------- Safety ----------
+  {id:"Safety|100|16",category:"Safety",value:100,clue:"Guard door open; cell won’t run.",answer:"What is close/latched guards and verify safety relays SAFE?",hint:"Dual-channel inputs must be true."},
+  {id:"Safety|200|17",category:"Safety",value:200,clue:"E-stop loop fault after reset.",answer:"What is inspect E-stop chain channels and reset safety relay per procedure?",hint:"Both channels must agree."},
+  {id:"Safety|300|18",category:"Safety",value:300,clue:"Need to clear a jam near pinch points.",answer:"What is LOTO or use maintenance hold-to-run with reduced speed and a spotter?",hint:"Never bypass guarding."},
+  {id:"Safety|400|19",category:"Safety",value:400,clue:"Gate switch misaligned.",answer:"What is adjust the sensor/actuator, verify status on HMI, then test?",hint:"Alignment shows as intermittent faults."},
+  {id:"Safety|500|20",category:"Safety",value:500,clue:"Safety relay faulted; won’t reset.",answer:"What is confirm all inputs safe, cycle power if specified, then reset relay?",hint:"Follow OEM reset steps."},
+
+  // ---------- Startup & Homing ----------
+  {id:"Startup & Homing|100|21",category:"Startup & Homing",value:100,clue:"After power-up, what’s first?",answer:"What is home all axes, verify references, then run a dry cycle?",hint:"Home → reference → dry run."},
+  {id:"Startup & Homing|200|22",category:"Startup & Homing",value:200,clue:"Reference sensor not detected.",answer:"What is check prox/switch alignment, wiring, and input state?",hint:"Use I/O monitor."},
+  {id:"Startup & Homing|300|23",category:"Startup & Homing",value:300,clue:"Robot & machine out of sequence.",answer:"What is re-sync: clear part, home axes, return robot to safe pose, then resume?",hint:"Don’t resume with part trapped."},
+  {id:"Startup & Homing|400|24",category:"Startup & Homing",value:400,clue:"Zero position appears off.",answer:"What is re-home and verify mastering/reference; check encoder battery warnings?",hint:"Drift suggests mastering check."},
+  {id:"Startup & Homing|500|25",category:"Startup & Homing",value:500,clue:"Cold start before production.",answer:"What is run a warm-up cycle and verify hydraulics/vacuum before parts?",hint:"Oil temps matter."},
+
+  // ---------- Diagnostics ----------
+  {id:"Diagnostics|100|26",category:"Diagnostics",value:100,clue:"“Peripheral not ready.”",answer:"What is check ready/permit handshake bits and device power?",hint:"Conveyors, vacuum, vision need Ready."},
+  {id:"Diagnostics|200|27",category:"Diagnostics",value:200,clue:"Vacuum pick keeps failing.",answer:"What is inspect cups, leaks, generator, and confirm vacuum switch threshold?",hint:"Watch vacuum live value."},
+  {id:"Diagnostics|300|28",category:"Diagnostics",value:300,clue:"Random stops with no clear cause.",answer:"What is review alarm history, wiggle-test cables, and log I/O during jog?",hint:"Intermittents = cabling."},
+  {id:"Diagnostics|400|29",category:"Diagnostics",value:400,clue:"An input stays stuck ON.",answer:"What is check sensor short/contamination and ensure no forced I/O is active?",hint:"Disable forces before testing."},
+  {id:"Diagnostics|500|30",category:"Diagnostics",value:500,clue:"Cycle time has crept up.",answer:"What is trend logs, isolate slow devices, check mechanical drag and setpoints?",hint:"Compare to golden run."}
+];
+
+const CATS = Array.from(new Set(DATA.map(x=>x.category)));
+const CAT_IDS = Object.fromEntries(CATS.map(c => [c, DATA.filter(x=>x.category===c).map(x=>x.id)]));
+
+// ---------- DOM ----------
+const id = s => document.getElementById(s);
+const catSel = id('catSel'); CATS.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
+
+let mode=null, deck=[], idx=0, score=0, right=0, wrong=0;
+let timerOn=true, ticking=null, timeLeft=20, mcOptions=[];
+const PROG_KEY='fr_solo_progress_v30';
+
+const setupCard=id('setupCard'), sessionCard=id('sessionCard'), summaryCard=id('summaryCard');
+const modeBadge=id('modeBadge'), catBadge=id('catBadge'), countBadge=id('countBadge');
+const timerPill=id('timerPill'), timeEl=id('time');
+const bar=id('bar'), pathBadge=id('pathBadge');
+const clueEl=id('clue'), ansEl=id('answer'), hintEl=id('hint');
+const mcArea=id('mcArea'), mcNote=id('mcNote');
+const scoreEl=id('score');
+
+function saveProgress(){ localStorage.setItem(PROG_KEY, JSON.stringify({mastery,last:Date.now()})); }
+function loadProgress(){ try{return JSON.parse(localStorage.getItem(PROG_KEY)||'null')}catch(e){return null} }
+let mastery=(loadProgress()?.mastery)||{};
+
+function pickDeck(){
+  const cat=catSel.value, minVal=parseInt(id('minVal').value,10);
+  const base=DATA.filter(x=>(cat==='All'||x.category===cat)&&x.value>=minVal);
+  const arr=[...base]; if(id('shuffle').checked) arr.sort(()=>Math.random()-0.5);
+  return arr;
+}
+function updateProgressBar(){
+  const p=deck.length?Math.round(((idx+1)/deck.length)*100):0;
+  bar.style.width=p+'%'; countBadge.textContent=deck.length?((idx+1)+'/'+deck.length):'0/0';
+}
+function showCard(){
+  const card=deck[idx]; if(!card) return;
+  pathBadge.textContent=card.category+' — $'+card.value;
+  clueEl.textContent=card.clue; ansEl.textContent=card.answer; ansEl.style.display='none';
+  hintEl.textContent=card.hint?('Hint: '+card.hint):'No hint for this one.'; hintEl.style.display='none';
+  updateProgressBar(); scoreEl.textContent=score;
+  mcArea.classList.add('hidden'); mcNote.classList.add('hidden');
+  if(mode==='practice'||mode==='exam'){ buildMC(card); mcArea.classList.remove('hidden'); mcNote.classList.remove('hidden'); if(timerOn) startTimer(); } else { stopTimer(); }
+}
+function buildMC(card){
+  const options=[card.answer]; const pool=DATA.filter(x=>x.id!==card.id);
+  while(options.length<4 && pool.length){ const i=Math.floor(Math.random()*pool.length); const a=pool.splice(i,1)[0].answer; if(!options.includes(a)) options.push(a); }
+  while(options.length<4) options.push('—'); options.sort(()=>Math.random()-0.5);
+  mcOptions=options; mcArea.innerHTML='';
+  options.forEach((ans,i)=>{ const d=document.createElement('div'); d.className='opt'; d.textContent=ans; d.dataset.index=i+1; d.addEventListener('click',()=>gradeMC(card,ans,d)); mcArea.appendChild(d); });
+}
+function gradeMC(card,chosen,node){
+  stopTimer(); const correct=chosen===card.answer;
+  if(correct){ node.classList.add('correct'); score+=card.value; right++; }
+  else{ node.classList.add('wrong'); score-=Math.max(100, Math.floor(card.value/2)); wrong++; }
+  scoreEl.textContent=score; ansEl.style.display='block';
+  if(!mastery[card.id]) mastery[card.id]={seen:0,correct:0}; mastery[card.id].seen++; if(correct) mastery[card.id].correct++;
+  saveProgress(); Array.from(mcArea.children).forEach(el=>el.style.pointerEvents='none');
+}
+function startTimer(){
+  stopTimer(); timeLeft=20; timerPill.style.display='inline-block'; timeEl.textContent=timeLeft;
+  ticking=setInterval(()=>{ timeLeft--; timeEl.textContent=timeLeft;
+    if(timeLeft<=0){ stopTimer(); const card=deck[idx]; if(!mastery[card.id]) mastery[card.id]={seen:0,correct:0}; mastery[card.id].seen++; wrong++; score-=Math.max(100, Math.floor(card.value/2)); scoreEl.textContent=score; ansEl.style.display='block'; Array.from(mcArea.children).forEach(el=>el.style.pointerEvents='none'); saveProgress(); }
+  },1000);
+}
+function stopTimer(){ if(ticking) clearInterval(ticking); ticking=null; timerPill.style.display='none'; }
+
+function next(){ if(idx<deck.length-1){ idx++; showCard(); } else { endSession(); } }
+function prev(){ if(idx>0){ idx--; showCard(); } }
+
+function startSession(m){
+  mode=m; deck=pickDeck(); if(!deck.length){ alert('No cards match your filters. Try "All" and value ≥ 100.'); return; }
+  if(mode==='exam' && deck.length>30) deck=deck.slice(0,30);
+  timerOn=id('timer').checked; idx=0; score=0; right=0; wrong=0;
+  modeBadge.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+  catBadge.textContent='Category: '+id('catSel').value;
+  setupCard.classList.add('hidden'); summaryCard.classList.add('hidden'); sessionCard.classList.remove('hidden'); showCard();
+}
+
+function computeBadgeLevel(cat){
+  const ids=CAT_IDS[cat]||[]; let uniqueCorrect=0;
+  ids.forEach(id=>{ const m=mastery[id]; if(m && m.correct>0) uniqueCorrect++; });
+  if(uniqueCorrect>=5) return 'gold'; if(uniqueCorrect>=4) return 'silver'; if(uniqueCorrect>=3) return 'bronze'; return 'none';
+}
+function badgeLabel(level){ return ({gold:'Gold',silver:'Silver',bronze:'Bronze'})[level] || 'No badge yet'; }
+function renderBadges(intoId){
+  const into=document.getElementById(intoId);
+  into.innerHTML=CATS.map(cat=>{
+    const level=computeBadgeLevel(cat);
+    return `<div class="badge-card"><div class="medal ${level}"></div><div><div class="badge-name">${cat}</div><div class="badge-level">${badgeLabel(level)}</div></div></div>`;
+  }).join('');
+}
+
+function endSession(){
+  sessionCard.classList.add('hidden'); summaryCard.classList.remove('hidden');
+  id('sumMode').textContent=mode; id('sumScore').textContent=score; id('sumRight').textContent=right; id('sumWrong').textContent=wrong;
+  const missed=deck.filter(c=>!mastery[c.id] || mastery[c.id].correct < mastery[c.id].seen);
+  let html=''; missed.forEach(c=>{ html+=`<li><strong>${c.category} $${c.value}</strong> — ${c.clue} <br><em>${c.answer}</em></li>`; });
+  id('missedList').innerHTML = html ? '<h4>Review these:</h4><ul>'+html+'</ul>' : '<em>Nice! No missed items.</em>';
+  renderBadges('badgesSummary');
+}
+function retryMissed(){
+  const missed=deck.filter(c=>!mastery[c.id] || mastery[c.id].correct < mastery[c.id].seen);
+  if(missed.length===0){ alert('No missed questions to retry!'); return; }
+  deck=missed; mode='practice'; timerOn=id('timer').checked; idx=0; score=0; right=0; wrong=0;
+  sessionCard.classList.remove('hidden'); summaryCard.classList.add('hidden'); showCard();
+}
+
+// Buttons
+id('startStudy').addEventListener('click',()=>startSession('study'));
+id('startPractice').addEventListener('click',()=>startSession('practice'));
+id('startExam').addEventListener('click',()=>startSession('exam'));
+id('studyBtn').addEventListener('click',()=>startSession('study'));
+id('practiceBtn').addEventListener('click',()=>startSession('practice'));
+id('examBtn').addEventListener('click',()=>startSession('exam'));
+id('resetBtn').addEventListener('click',()=>{ mastery={}; saveProgress(); renderBadges('badgesPanel'); renderBadges('badgesSummary'); alert('Progress reset.'); });
+id('backBtn').addEventListener('click',()=>{ stopTimer(); sessionCard.classList.add('hidden'); setupCard.classList.remove('hidden'); renderBadges('badgesPanel'); });
+id('prevBtn').addEventListener('click',prev); id('nextBtn').addEventListener('click',next);
+id('retryMissed').addEventListener('click',retryMissed);
+id('finishBtn').addEventListener('click',()=>{ summaryCard.classList.add('hidden'); setupCard.classList.remove('hidden'); renderBadges('badgesPanel'); });
+id('showAnswer').addEventListener('click',()=>{ ansEl.style.display=(ansEl.style.display==='none'||ansEl.style.display==='')?'block':'none'; });
+id('showHint').addEventListener('click',()=>{ hintEl.style.display=(hintEl.style.display==='none'||hintEl.style.display==='')?'block':'none'; });
+id('markEasy').addEventListener('click',()=>{ const card=deck[idx]; if(!mastery[card.id]) mastery[card.id]={seen:0,correct:0}; mastery[card.id].seen++; mastery[card.id].correct++; saveProgress(); next(); });
+id('markHard').addEventListener('click',()=>{ const card=deck[idx]; if(!mastery[card.id]) mastery[card.id]={seen:0,correct:0}; mastery[card.id].seen++; saveProgress(); next(); });
+
+// Hotkeys
+document.addEventListener('keydown',(e)=>{
+  if(setupCard.classList.contains('hidden')){
+    if(e.key==='n'||e.key==='N') next();
+    if(e.key==='p'||e.key==='P') prev();
+    if(e.key==='h'||e.key==='H') id('showHint').click();
+    if(e.key==='a'||e.key==='A') id('showAnswer').click();
+    if(['1','2','3','4'].includes(e.key)){
+      const opt=[...mcArea.children].find(x=>x.dataset.index===e.key); if(opt) opt.click();
+    }
+  }
+});
+
+// Initial
+renderBadges('badgesPanel');
+</script>
+</body>
+</html>
