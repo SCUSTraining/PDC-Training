@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fault-Response Game Hub</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1a3a">
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0b1a3a;color:#fff;margin:0}
+  .wrap{max-width:960px;margin:0 auto;padding:24px}
+  h1{margin:0 0 8px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:16px}
+  .card{background:#0a1f49;border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .btn{display:inline-block;background:#3b82f6;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;text-decoration:none}
+  p{opacity:.95}
+  .note{font-size:14px;opacity:.85}
+  header{display:flex;align-items:center;gap:10px}
+  header img{width:40px;height:40px;border-radius:8px}
+  footer{opacity:.8;font-size:12px;margin-top:16px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="icons/icon-192.png" alt="icon">
+      <h1>Fault-Response Game Hub</h1>
+    </header>
+    <p class="note">Use this hub on GitHub Pages. It also works offline after first load (PWA).</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Solo Trainer</h3>
+        <p>Flashcards / Practice / Exam + hotkeys. Tracks local mastery.</p>
+        <a class="btn" href="games/Fault_Response_SOLO_Trainer_v2.html">Open Solo Trainer</a>
+      </div>
+      <div class="card">
+        <h3>Solo Trainer (30Q + Badges)</h3>
+        <p>30-question exam plus category badges.</p>
+        <a class="btn" href="games/Fault_Response_SOLO_Trainer_30Q_Badges.html">Open 30Q + Badges</a>
+      </div>
+      <div class="card">
+        <h3>Jeopardy Board (Team Play)</h3>
+        <p>Run a session with scores, wagers, Daily Doubles.</p>
+        <a class="btn" href="games/Fault_Response_Jeopardy_Interactive.html" target="_blank" rel="noopener">Open Jeopardy Board</a>
+      </div>
+    </div>
+
+    <h2 style="margin-top:22px;">Add to Home Screen</h2>
+    <p class="note">On iOS/Android, open this site and use “Add to Home Screen” to install the app-like shortcut.</p>
+
+    <footer>Theme colors: #0b1a3a / #3b82f6 • All games run client-side only.</footer>
+  </div>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+    });
+  }
+</script>
+</body>
+</html>
