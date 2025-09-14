@@ -206,3 +206,214 @@ function renderScores(){
     div.querySelectorAll('input').forEach(inp=>{
       inp.addEventListener('click', e=>e.stopPropagation());
       inp.addEventListener('input', e=>{ const tt = teams.find(x=>x.id===inp.dataset.id); tt.name = inp.value; });
+    });
+    div.querySelectorAll('button[data-action="adj"]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        const id = btn.dataset.id, val = parseInt(btn.dataset.val,10);
+        const tt = teams.find(x=>x.id===id); tt.score += val; document.getElementById('score-'+id).textContent = tt.score;
+      });
+    });
+  });
+}
+renderScores();
+
+// Keyboard team select
+document.addEventListener('keydown', e=>{
+  if(['1','2','3'].includes(e.key)){ selectedTeam = teams[parseInt(e.key,10)-1]?.id || selectedTeam; renderScores(); }
+});
+
+/* ========================= BOARD ========================= */
+const boardEl = document.getElementById('board');
+function renderBoard(){
+  // Categories header row
+  boardEl.innerHTML = '';
+  DATA.forEach(col=>{
+    const cat = document.createElement('div');
+    cat.className = 'cat';
+    cat.textContent = col.cat;
+    boardEl.appendChild(cat);
+  });
+  // Value rows
+  for(let r=0;r<5;r++){
+    DATA.forEach((col,cx)=>{
+      const item = col.items[r];
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.textContent = '$'+item.v;
+      tile.dataset.cx = cx; tile.dataset.rx = r;
+      tile.addEventListener('click', ()=> openClue(cx,r));
+      boardEl.appendChild(tile);
+    });
+  }
+}
+renderBoard();
+
+/* ========================= DAILY DOUBLES ========================= */
+let ddSet = new Set(); // "cx-rx" keys
+document.getElementById('btnDD').addEventListener('click', ()=>{
+  ddSet.clear();
+  // pick 2 unique tiles at random
+  const picks = [];
+  while(picks.length<2){
+    const cx = Math.floor(Math.random()*DATA.length);
+    const rx = Math.floor(Math.random()*5);
+    const key = `${cx}-${rx}`;
+    if(!picks.includes(key)) picks.push(key);
+  }
+  picks.forEach(k=>ddSet.add(k));
+  alert('Daily Doubles placed! They will reveal when a tile is opened.');
+});
+
+/* ========================= CLUE DIALOG ========================= */
+const dlg = document.getElementById('dlg');
+const dlgCat = document.getElementById('dlgCat');
+const dlgVal = document.getElementById('dlgVal');
+const dlgClue = document.getElementById('dlgClue');
+const dlgAns = document.getElementById('dlgAns');
+const ddBadge = document.getElementById('ddBadge');
+const ddSetup = document.getElementById('ddSetup');
+const ddTeams = document.getElementById('ddTeams');
+const ddWager = document.getElementById('ddWager');
+const ddStart = document.getElementById('ddStart');
+
+let current = null;      // {cx, rx, val, dd:boolean}
+let ddActive = null;     // {teamId, wager}
+
+function openClue(cx, rx){
+  const item = DATA[cx].items[rx];
+  current = {cx, rx, val:item.v, dd: ddSet.has(`${cx}-${rx}`)};
+  dlgCat.textContent = DATA[cx].cat;
+  dlgVal.textContent = '$'+item.v;
+  dlgClue.textContent = item.q;
+  dlgAns.textContent = item.a;
+  dlgAns.style.display='none';
+  ddBadge.style.display = current.dd ? 'inline-block' : 'none';
+  ddActive = null;
+
+  // Daily double setup
+  if(current.dd){
+    ddSetup.style.display='flex';
+    ddTeams.innerHTML = teams.map(t=>`
+      <label><input type="radio" name="ddTeam" value="${t.id}" ${t.id===selectedTeam?'checked':''}> ${t.name}</label>
+    `).join(' ');
+    ddWager.value = Math.min(Math.max(100, Math.abs(teams.find(t=>t.id===selectedTeam)?.score || 0)), 1000);
+  } else {
+    ddSetup.style.display='none';
+  }
+
+  dlg.showModal();
+  // mark tile used
+  const key = `[data-cx="${cx}"][data-rx="${rx}"]`;
+  const tile = boardEl.querySelector('.tile'+key.replaceAll('[','\\[').replaceAll(']','\\]'));
+  if(tile) tile.classList.add('used');
+}
+
+document.getElementById('btnShowAns').addEventListener('click', ()=> dlgAns.style.display = (dlgAns.style.display==='none'?'block':'none'));
+document.addEventListener('keydown', e=>{
+  if(!dlg.open) return;
+  if(e.key==='a' || e.key==='A') document.getElementById('btnShowAns').click();
+  if(e.key==='c' || e.key==='C') document.getElementById('btnRight').click();
+  if(e.key==='w' || e.key==='W') document.getElementById('btnWrong').click();
+  if(e.key==='n' || e.key==='N') dlg.close();
+});
+
+// Daily Double lock
+ddStart.addEventListener('click', ()=>{
+  const sel = ddTeams.querySelector('input[name="ddTeam"]:checked');
+  if(!sel){ alert('Pick a team first.'); return; }
+  const wager = parseInt(ddWager.value,10);
+  if(isNaN(wager) || wager<0){ alert('Enter a valid wager.'); return; }
+  ddActive = {teamId: sel.value, wager};
+  ddSetup.style.display='none';
+});
+
+function award(points, teamId = selectedTeam){
+  const t = teams.find(x=>x.id===teamId);
+  if(!t){ alert('Select a team first.'); return; }
+  t.score += points; renderScores(); dlg.close();
+}
+function penalize(points, teamId = selectedTeam){
+  const t = teams.find(x=>x.id===teamId);
+  if(!t){ alert('Select a team first.'); return; }
+  t.score -= points; renderScores(); dlg.close();
+}
+
+document.getElementById('btnRight').addEventListener('click', ()=>{
+  const base = current?.val || 0;
+  if(current?.dd){
+    if(!ddActive){ alert('Lock a team & wager first.'); return; }
+    award(ddActive.wager, ddActive.teamId);
+  } else {
+    award(base);
+  }
+});
+document.getElementById('btnWrong').addEventListener('click', ()=>{
+  const base = current?.val || 0;
+  if(current?.dd){
+    if(!ddActive){ alert('Lock a team & wager first.'); return; }
+    penalize(ddActive.wager, ddActive.teamId);
+  } else {
+    penalize(base);
+  }
+});
+document.getElementById('btnSkip').addEventListener('click', ()=> dlg.close());
+
+/* ========================= FINAL JEOPARDY ========================= */
+const finalDlg = document.getElementById('finalDlg');
+const finalCat = document.getElementById('finalCat');
+const finalClue = document.getElementById('finalClue');
+const finalAns = document.getElementById('finalAns');
+const finalShow = document.getElementById('finalShow');
+const finalTable = document.querySelector('#finalTable tbody');
+
+document.getElementById('btnFinal').addEventListener('click', ()=>{
+  // Build table rows fresh
+  finalTable.innerHTML = teams.map(t=>`
+    <tr data-id="${t.id}">
+      <td>${t.name}</td>
+      <td>${t.score}</td>
+      <td><input type="number" value="0" min="0" step="50" style="width:90px;background:#071a3b;color:#fff;border:none;border-radius:8px;padding:6px 8px"></td>
+      <td>
+        <label><input type="radio" name="res-${t.id}" value="correct"> ✓</label>
+        <label style="margin-left:8px;"><input type="radio" name="res-${t.id}" value="wrong" checked> ✗</label>
+      </td>
+      <td><button class="btn ghost" data-apply="${t.id}">Apply</button></td>
+    </tr>
+  `).join('');
+  finalCat.textContent = FINAL.category;
+  finalClue.textContent = FINAL.clue;
+  finalAns.textContent = FINAL.answer;
+  finalAns.style.display='none';
+  finalDlg.showModal();
+
+  finalTable.querySelectorAll('button[data-apply]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.apply;
+      const tr = finalTable.querySelector(`tr[data-id="${id}"]`);
+      const wager = parseInt(tr.querySelector('input[type="number"]').value, 10) || 0;
+      const res = tr.querySelector('input[name="res-'+id+'"]:checked')?.value || 'wrong';
+      const team = teams.find(t=>t.id===id);
+      if(res==='correct') team.score += wager; else team.score -= wager;
+      renderScores();
+      btn.disabled = true; btn.textContent = 'Applied';
+    });
+  });
+});
+finalShow.addEventListener('click', ()=> finalAns.style.display = (finalAns.style.display==='none'?'inline-block':'none'));
+
+/* ========================= RESET ========================= */
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Reset scores and board?')) return;
+  teams.forEach(t=>t.score=0); renderScores();
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('used'));
+  ddSet.clear();
+});
+
+/* ========================= ACCESSIBILITY ========================= */
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ if(dlg.open) dlg.close(); if(finalDlg.open) finalDlg.close(); }
+});
+</script>
+</body>
+</html>
