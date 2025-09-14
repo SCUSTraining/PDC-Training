@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fault-Response Jeopardy — Team Board</title>
+<style>
+  :root{
+    --ink:#0b1a3a; --panel:#0e2250; --tile:#0a2a63; --accent:#3b82f6; --ok:#10b981; --bad:#ef4444; --muted:#94a3b8; --gold:#ffd700;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  header{background:var(--panel);padding:14px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+  h1{margin:0;font-size:18px}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#3a4a7a}
+  .btn.ghost{background:transparent;border:1px solid var(--accent)}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
+  .board{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .cat{background:#081b44;border-radius:12px;padding:10px;text-align:center;font-weight:800;min-height:64px;display:flex;align-items:center;justify-content:center}
+  .tile{background:var(--tile);border-radius:12px;min-height:84px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;cursor:pointer;user-select:none;border:2px solid transparent}
+  .tile.used{opacity:.25;pointer-events:none}
+  .scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:14px 0}
+  .team{background:#0a204e;border-radius:14px;padding:12px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+  .team input{background:#07193a;border:none;color:#fff;padding:6px 8px;border-radius:8px;width:110px;font-weight:800}
+  .team .score{font-size:26px;font-weight:900}
+  .k{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{background:#0f2a5c;border-radius:999px;padding:6px 10px}
+  .selected{outline:2px solid var(--gold); box-shadow:0 0 0 2px var(--gold) inset}
+  .note{font-size:12px;color:var(--muted)}
+  dialog{border:none;border-radius:16px;max-width:800px;width:min(92vw,820px);background:#0b1f4f;color:#fff;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .dlg-h{padding:14px 16px;background:#0d2a63;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center}
+  .dlg-b{padding:16px}
+  .clue{font-size:22px;line-height:1.4;margin:8px 0}
+  .ans{display:none;margin-top:10px;padding:12px;background:#071a3b;border-left:4px solid var(--accent);border-radius:8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .right{background:var(--ok)} .wrong{background:var(--bad)}
+  .dd-badge{background:#b45309;color:#fff;border-radius:999px;padding:4px 8px;font-weight:800}
+  .footer{padding:12px 16px;background:#0d2a63;border-radius:0 0 16px 16px;display:flex;gap:8px;justify-content:flex-end}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .wager{display:flex;align-items:center;gap:8px}
+  .wager input{width:90px;padding:6px 8px;border-radius:8px;border:none;background:#071a3b;color:#fff}
+  .team-radio{display:flex;gap:10px;flex-wrap:wrap}
+  .final-wrap{display:grid;grid-template-columns:1fr;gap:10px}
+  table.final{width:100%;border-collapse:collapse}
+  table.final th, table.final td{border:1px solid #123; padding:8px; text-align:center}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+  <header>
+    <div class="row" style="align-items:center;gap:10px">
+      <h1>Fault-Response Jeopardy — Team Board</h1>
+      <span class="pill">6 categories × $100–$500</span>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnDD">Assign Daily Doubles</button>
+      <button class="btn secondary" id="btnFinal">Final Jeopardy</button>
+      <button class="btn ghost" id="btnReset">Reset Game</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="scores" id="scores"></div>
+    <p class="note">Tip: click a team card to select it. Keyboard: 1/2/3 selects team • A = show answer • C/W = mark correct/wrong • N = next tile dialog close.</p>
+
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- Clue dialog -->
+  <dialog id="dlg">
+    <div class="dlg-h">
+      <div class="row" style="align-items:center;gap:10px">
+        <strong id="dlgCat"></strong>
+        <span class="pill" id="dlgVal"></span>
+        <span class="dd-badge" id="ddBadge" style="display:none;">DAILY DOUBLE</span>
+      </div>
+      <button class="btn ghost" onclick="dlg.close()">✕</button>
+    </div>
+    <div class="dlg-b">
+      <div id="ddSetup" class="row" style="display:none;margin:6px 0 10px 0;">
+        <span>Choose team & wager:</span>
+        <div class="team-radio" id="ddTeams"></div>
+        <div class="wager"><label>Wager $</label><input type="number" id="ddWager" min="0" step="50" value="100"></div>
+        <button class="btn" id="ddStart">Lock Wager & Show Clue</button>
+      </div>
+
+      <div class="clue" id="dlgClue"></div>
+      <div class="ans" id="dlgAns"></div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" id="btnShowAns">Show Answer (A)</button>
+        <button class="btn right" id="btnRight">Mark Correct (C)</button>
+        <button class="btn wrong" id="btnWrong">Mark Wrong (W)</button>
+        <button class="btn secondary" id="btnSkip">Skip</button>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" onclick="dlg.close()">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Final Jeopardy dialog -->
+  <dialog id="finalDlg">
+    <div class="dlg-h">
+      <strong>Final Jeopardy</strong>
+      <button class="btn ghost" onclick="finalDlg.close()">✕</button>
+    </div>
+    <div class="dlg-b">
+      <div class="final-wrap">
+        <div><strong>Category:</strong> <span id="finalCat"></span></div>
+        <div class="clue" id="finalClue"></div>
+        <div class="row">
+          <button class="btn" id="finalShow">Show Answer</button>
+          <div class="ans" id="finalAns" style="display:none;margin-left:8px;"></div>
+        </div>
+        <table class="final" id="finalTable">
+          <thead><tr><th>Team</th><th>Current</th><th>Wager</th><th>Correct?</th><th>Apply</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" onclick="finalDlg.close()">Close</button>
+    </div>
+  </dialog>
+
+<script>
+/* ========================= DATA (30 clues + Final) ========================= */
+const DATA = [
+  {cat:"Robotics", items:[
+    {v:100, q:"Robot not in AUTO; cycle won’t start.", a:"What is switch to AUTO on the teach pendant and press Cycle Start after clearing faults?"},
+    {v:200, q:"Pendant E-stop was pressed earlier.", a:"What is release the E-stop, reset controller faults, then Start?"},
+    {v:300, q:"Gate opened; robot in HOLD.", a:"What is close/lock the gate, confirm safety fence OK, then resume?"},
+    {v:400, q:"Program paused waiting for light curtain reset.", a:"What is clear the area, reset the curtain, then press Start?"},
+    {v:500, q:"Robot collided; needs recovery.", a:"What is use the recovery routine to jog to a safe pose, verify zero, then resume?"}
+  ]},
+  {cat:"Hydraulics", items:[
+    {v:100, q:"Pump runs but no pressure builds.", a:"What is check motor contactor, low-oil switch, and prime the pump if needed?"},
+    {v:200, q:"Hydraulic overheat alarm.", a:"What is verify cooler flow/fan, clean filters, reduce bypass?"},
+    {v:300, q:"Actuators drift at rest.", a:"What is inspect for internal leakage and check holding/relief valves?"},
+    {v:400, q:"Pressure spikes during cycle.", a:"What is verify relief setpoint and sticky checks; add snubbers if specified?"},
+    {v:500, q:"Cavitation noise from pump.", a:"What is check oil level, suction strainer, and air leaks on suction side?"}
+  ]},
+  {cat:"HMI Errors", items:[
+    {v:100, q:"HMI says “Machine not homed.”", a:"What is run the homing sequence (Locking → Injection → Ejector → Aux)?"},
+    {v:200, q:"“Part not present” sensor fault.", a:"What is check sensor power/position, clean the target, and verify I/O on HMI?"},
+    {v:300, q:"Alarms persist after reset.", a:"What is remove the root cause, acknowledge, then reset interlocks?"},
+    {v:400, q:"Wrong job/recipe loaded.", a:"What is load the correct recipe and verify critical setpoints before start?"},
+    {v:500, q:"PLC/HMI comms lost.", a:"What is check network/power, re-establish PLC run state and HMI handshake?"}
+  ]},
+  {cat:"Safety", items:[
+    {v:100, q:"Guard door open; cell won’t run.", a:"What is close/latched guards and verify safety relays SAFE?"},
+    {v:200, q:"E-stop loop fault after reset.", a:"What is inspect dual-channel E-stop chain and reset safety relay per procedure?"},
+    {v:300, q:"Need to clear a jam near pinch points.", a:"What is LOTO or use maintenance hold-to-run with reduced speed and a spotter?"},
+    {v:400, q:"Gate switch misaligned.", a:"What is adjust the sensor/actuator, verify status on HMI, then test?"},
+    {v:500, q:"Safety relay faulted; won’t reset.", a:"What is confirm all inputs safe, cycle power if specified, then reset relay?"}
+  ]},
+  {cat:"Startup & Homing", items:[
+    {v:100, q:"After power-up, what’s first?", a:"What is home all axes, verify references, then run a dry cycle?"},
+    {v:200, q:"Reference sensor not detected.", a:"What is check prox/switch alignment, wiring, and input state?"},
+    {v:300, q:"Robot & machine out of sequence.", a:"What is re-sync: clear part, home axes, return robot to safe pose, then resume?"},
+    {v:400, q:"Zero position appears off.", a:"What is re-home and verify mastering/reference; check encoder battery warnings?"},
+    {v:500, q:"Cold start before production.", a:"What is run a warm-up cycle and verify hydraulics/vacuum before parts?"}
+  ]},
+  {cat:"Diagnostics", items:[
+    {v:100, q:"“Peripheral not ready.”", a:"What is check ready/permit handshake bits and device power?"},
+    {v:200, q:"Vacuum pick keeps failing.", a:"What is inspect cups, leaks, generator, and confirm vacuum switch threshold?"},
+    {v:300, q:"Random stops with no clear cause.", a:"What is review alarm history, wiggle-test cables, and log I/O during jog?"},
+    {v:400, q:"An input stays stuck ON.", a:"What is check sensor short/contamination and ensure no forced I/O is active?"},
+    {v:500, q:"Cycle time has crept up.", a:"What is trend logs, isolate slow devices, check mechanical drag and setpoints?"}
+  ]}
+];
+
+const FINAL = {
+  category: "Cell Recovery Strategy",
+  clue: "After a mid-cycle fault with a part trapped in the mold and the robot mid-move, outline the safest restart path.",
+  answer: "What is: place cell in safe state → verify guarding closed and safety OK → clear/secure trapped part → home axes in safe order (robot to safe pose first if needed) → re-sync robot & machine → run a dry cycle → resume production?"
+};
+
+/* ========================= SCOREBOARD ========================= */
+let teams = [
+  {name:"Alpha", score:0, id:"t1"},
+  {name:"Bravo", score:0, id:"t2"},
+  {name:"Charlie", score:0, id:"t3"}
+];
+let selectedTeam = "t1";
+
+const scoresEl = document.getElementById('scores');
+function renderScores(){
+  scoresEl.innerHTML = teams.map(t => `
+    <div class="team ${t.id===selectedTeam?'selected':''}" data-id="${t.id}">
+      <div class="k">
+        <input value="${t.name}" data-id="${t.id}" aria-label="Team name">
+        <button class="btn ghost" data-action="adj" data-id="${t.id}" data-val="-200">-200</button>
+        <button class="btn ghost" data-action="adj" data-id="${t.id}" data-val="-100">-100</button>
+        <button class="btn ghost" data-action="adj" data-id="${t.id}" data-val="+100">+100</button>
+        <button class="btn ghost" data-action="adj" data-id="${t.id}" data-val="+200">+200</button>
+      </div>
+      <div class="score" id="score-${t.id}">${t.score}</div>
+    </div>
+  `).join('');
+  // events
+  scoresEl.querySelectorAll('.team').forEach(div=>{
+    div.addEventListener('click', e=>{ selectedTeam = div.dataset.id; renderScores(); });
+    div.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('click', e=>e.stopPropagation());
+      inp.addEventListener('input', e=>{ const tt = teams.find(x=>x.id===inp.dataset.id); tt.name = inp.value; });
