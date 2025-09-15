@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pre-Flight Quiz Show — Basic Pre-Start Checks</title>
+<style>
+  :root{
+    --bg:#0a0f1a;
+    --panel:#121a2b;
+    --accent:#3af;
+    --ok:#21c55d;
+    --no:#ef4444;
+    --gold:#f59e0b;
+    --text:#e6eefc;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background: radial-gradient(1200px 700px at 50% -10%, #1a2440, var(--bg));
+    color:var(--text);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .game{
+    width:min(1100px,100%);
+    background:linear-gradient(180deg, #121a2b 0%, #0e1526 100%);
+    border:1px solid #263556;
+    border-radius:22px;
+    box-shadow:0 10px 40px rgba(0,0,0,.5), inset 0 0 60px rgba(58,170,255,.06);
+    overflow:hidden;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; gap:12px;
+    background:linear-gradient(90deg, rgba(58,170,255,.15), transparent 60%);
+    border-bottom:1px solid #24324f;
+  }
+  .title{
+    display:flex; align-items:center; gap:14px; letter-spacing:.4px;
+    font-weight:700; font-size: clamp(16px, 2.4vw, 22px);
+  }
+  .marquee{
+    display:inline-block; padding:6px 12px; border-radius:999px;
+    background:linear-gradient(90deg,#2563eb,#06b6d4);
+    color:#fff; text-transform:uppercase; font-weight:800; font-size:.8rem;
+    box-shadow:0 0 12px rgba(37,99,235,.45);
+  }
+  .stats{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  .chip{
+    background:#0b1222; border:1px solid #223456; padding:8px 12px;
+    border-radius:12px; font-size:.92rem; display:flex; gap:8px; align-items:center;
+  }
+  .dot{
+    width:10px; height:10px; border-radius:50%;
+    box-shadow:0 0 12px currentColor;
+  }
+  .dot.ok{ background:var(--ok); color:var(--ok);}
+  .dot.no{ background:var(--no); color:var(--no);}
+  .dot.gold{ background:var(--gold); color:var(--gold);}
+  .board{
+    display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; padding:16px;
+  }
+  .panel{
+    background:var(--panel); border:1px solid #24324f; border-radius:16px;
+    padding:18px; position:relative; overflow:hidden;
+  }
+  .panel h2{
+    margin:0 0 10px; font-size:1rem; font-weight:800; opacity:.9; letter-spacing:.3px;
+    text-transform:uppercase; color:#9bc3ff;
+  }
+  .question{
+    font-size: clamp(20px, 3.3vw, 32px);
+    line-height:1.2; font-weight:800; letter-spacing:.2px;
+    padding:8px 0 10px;
+    text-shadow:0 2px 14px rgba(58,170,255,.15);
+  }
+  .hint{
+    font-size:.95rem; color:#a6bde8; opacity:.9;
+  }
+  .answers{
+    display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-top:18px;
+  }
+  .btn{
+    -webkit-tap-highlight-color:transparent;
+    cursor:pointer; user-select:none; border:none;
+    padding:18px 18px; border-radius:16px; font-weight:900; letter-spacing:.3px;
+    font-size: clamp(18px, 2.6vw, 24px);
+    transition: transform .05s ease, box-shadow .15s ease, filter .15s ease, opacity .2s ease;
+    color:#0b1222;
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+  }
+  .btn:active{ transform: translateY(2px) }
+  .btn.ok{ background: radial-gradient(120% 140% at 30% -10%, #a7f3d0, var(--ok)); }
+  .btn.no{ background: radial-gradient(120% 140% at 30% -10%, #fecaca, var(--no)); color:#120909;}
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+  .status{
+    display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;
+  }
+  .buzzer{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
+    border:1px solid #203253; background:#0c1325;
+  }
+  .lamp{
+    width:14px; height:14px; border-radius:50%;
+    background:#222; box-shadow: inset 0 0 8px #000;
+  }
+  .lamp.on{
+    background: radial-gradient(circle at 40% 35%, #c3f0ff 0%, #3af 60%, #0bf 100%);
+    box-shadow: 0 0 16px #3af, 0 0 40px rgba(58,170,255,.5), inset 0 0 10px rgba(255,255,255,.35);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ filter:brightness(1) }
+    50%{ filter:brightness(1.35) }
+  }
+  .progress{
+    height:12px; width:100%; background:#0b1222; border:1px solid #223456; border-radius:999px;
+    overflow:hidden; margin-top:10px;
+  }
+  .bar{
+    height:100%; width:100%; background: linear-gradient(90deg, #16a34a, #f59e0b, #ef4444);
+    transform:translateX(0%); transition: transform .2s linear;
+  }
+  .side{
+    display:grid; gap:16px;
+  }
+  .card{
+    background:#0b1222; border:1px solid #223456; border-radius:14px; padding:14px;
+  }
+  .card h3{ margin:0 0 8px; font-size:.95rem; color:#9bc3ff; text-transform:uppercase }
+  .score{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-weight:700; font-size:1.05rem;
+  }
+  .tally{
+    display:flex; gap:6px;
+  }
+  .pip{
+    width:12px; height:12px; border-radius:3px; background:#1e293b; border:1px solid #334155;
+  }
+  .pip.on{ background:var(--gold); box-shadow:0 0 10px var(--gold) }
+  .controls{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px }
+  .small{
+    font-size:.9rem; padding:8px 10px; border-radius:10px; border:1px solid #24324f; background:#0c1529; color:#cfe3ff;
+    cursor:pointer;
+  }
+  .small:active{ transform: translateY(1px) }
+  .win{
+    position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.7); z-index:20;
+    backdrop-filter: blur(3px);
+  }
+  .win.show{ display:grid }
+  .win .modal{
+    background:linear-gradient(180deg,#0e1729,#0a1224);
+    border:1px solid #2a3a60; border-radius:20px; padding:26px; width:min(560px,92%);
+    text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.6);
+  }
+  .win h1{ margin:.1em 0 .2em; font-size:clamp(24px,3.8vw,36px) }
+  .win p{ color:#bdd6ff }
+  .keys{ font-size:.9rem; opacity:.85 }
+  footer{
+    padding:10px 16px; font-size:.85rem; color:#98b5e6; opacity:.9; display:flex; justify-content:space-between; gap:10px;
+    border-top:1px solid #223456; background:#0b1222;
+  }
+</style>
+</head>
+<body>
+  <div class="game" role="application" aria-label="Pre-Flight Quiz Show">
+    <header>
+      <div class="title">
+        <span class="marquee">Quiz Show</span>
+        <span>Pre-Flight: Basic Pre-Start Checks</span>
+      </div>
+      <div class="stats">
+        <div class="chip"><span class="dot ok"></span> Goal: 5 in a row</div>
+        <div class="chip"><span class="dot gold"></span> Current Streak: <span id="streak">0</span></div>
+        <div class="chip"><span class="dot no"></span> Best: <span id="best">0</span></div>
+      </div>
+    </header>
+
+    <div class="board">
+      <section class="panel">
+        <h2>Rapid-Fire Question</h2>
+        <div class="question" id="qText">Press Start to begin!</div>
+        <div class="hint" id="qHint" aria-live="polite"></div>
+
+        <div class="answers" aria-label="Answer options">
+          <button class="btn ok" id="btnOK" disabled title="Keyboard: A / Left">
+            ✅ OK to start
+          </button>
+          <button class="btn no" id="btnNO" disabled title="Keyboard: L / Right">
+            ⛔ Not OK
+          </button>
+        </div>
+
+        <div class="status">
+          <div class="buzzer" title="Buzzer status">
+            <div class="lamp" id="lamp"></div>
+            <div><strong>Buzzer:</strong> <span id="lampText">OFF</span></div>
+          </div>
+          <div class="buzzer">
+            ⏱️ <strong>&nbsp;Time:</strong>&nbsp;<span id="timeLeft">—</span>s
+          </div>
+        </div>
+
+        <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+      </section>
+
+      <aside class="side">
+        <div class="card">
+          <h3>Round Controls</h3>
+          <div class="controls">
+            <button class="small" id="start">▶ Start / Next</button>
+            <button class="small" id="restart">↺ Reset Streak</button>
+            <button class="small" id="learn">💡 Show Why</button>
+            <button class="small" id="mute">🔊 Sound: On</button>
+          </div>
+          <p class="keys">Keys: <strong>Space</strong> Start • <strong>A</strong> OK • <strong>L</strong> Not OK</p>
+        </div>
+
+        <div class="card">
+          <h3>How to Win</h3>
+          <p>Answer 5 checks correctly in a row. Correct = you <em>keep</em> the buzzer. Wrong or timeout = buzzer off, streak resets.</p>
+        </div>
+
+        <div class="card">
+          <h3>Trainer Tips</h3>
+          <ul style="margin:.4em 0 0 1.1em; padding:0; line-height:1.4">
+            <li>Focus on PPE, guards/doors, E-Stops, safety switch key, leaks/spills, area clear, and one-person operation.</li>
+            <li>“OK” means safe to proceed; if anything is unsafe or missing, choose “Not OK”.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <div>Made for floor training — fully offline.</div>
+      <div>© Pre-Flight Quiz Show</div>
+    </footer>
+  </div>
+
+  <!-- Win modal -->
+  <div class="win" id="win">
+    <div class="modal">
+      <h1>🏆 Five in a Row — You Win!</h1>
+      <p>You kept the buzzer through five rapid-fire pre-start checks. Nice job!</p>
+      <div style="margin-top:14px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap">
+        <button class="small" id="playAgain">Play Again</button>
+        <button class="small" id="closeWin">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   Pre-Flight Quiz Show
+   Fully offline, no assets needed
+   ========================= */
+
+const questions = [
+  // Format: text, acceptable(true if OK to start), hint
+  {t:"PPE on: safety shoes, gloves, eye/face protection.", ok:true, h:"Hot surfaces and liquid metal hazards require proper PPE."},
+  {t:"Guard doors open to “watch” the cycle.", ok:false, h:"Protective doors must be closed and effective."},
+  {t:"Emergency Stop is tested and released (not pressed).", ok:true, h:"E-Stop must function and be released before start."},
+  {t:"Safety switch key is removed during normal operation.", ok:false, h:"Key is for setup/maintenance; insert for normal ops."},
+  {t:"Hydraulic leaks visible under the machine.", ok:false, h:"Leaks = slip/fire hazard and machine fault."},
+  {t:"Work area is dry—no water near molten metal path.", ok:true, h:"Water + molten metal = explosion risk."},
+  {t:"Photoelectric sensors clear; not taped over or blocked.", ok:true, h:"Do not bypass safety sensors."},
+  {t:"Someone is inside the cell helping align parts.", ok:false, h:"One-person operation; no one in danger zone."},
+  {t:"Correct die is clamped, ejectors connected, supports in place.", ok:true, h:"Use the right die, clamp and support properly."},
+  {t:"Loose tools left on platen to ‘grab later’.", ok:false, h:"Clear all tools and scraps before start."},
+  {t:"Drive unit ready; door to control cabinet closed.", ok:true, h:"Keep cabinet closed; cooling functions correctly."},
+  {t:"Floor around cell oily; we’ll clean after first cycle.", ok:false, h:"Clean slips/trips before operation."},
+  {t:"RFID / user login complete; permissions correct.", ok:true, h:"Operate only with proper authorization."},
+  {t:"Protective hood over plunger is open during auto.", ok:false, h:"Hoods/guards must be closed."},
+  {t:"Nitrogen bottles marked ≥ 4.5 purity for accumulators.", ok:true, h:"Use correct N₂ purity for safety."},
+  {t:"Photoeye fault warning present; we can ignore for now.", ok:false, h:"Resolve safety faults before running."},
+  {t:"E-Stops at fence posts accessible and unobstructed.", ok:true, h:"E-Stops should be easy to reach."},
+  {t:"Wet ladle stored near melt area—slightly damp.", ok:false, h:"Never introduce moisture to molten metal path."},
+  {t:"Die cooling circuits connected and not leaking.", ok:true, h:"No leaks; cooling connected correctly."},
+  {t:"Tie bars/plates fouled with metal splash, uncleaned.", ok:false, h:"Clean machine surfaces before start."},
+  {t:"Housekeeping good: ladders/steps clear, no clutter.", ok:true, h:"Maintain a safe work environment."},
+  {t:"Using a jumper to bypass a guard interlock.", ok:false, h:"Never bypass protective devices."},
+  {t:"Two-hand start buttons work as expected.", ok:true, h:"Verify safe start functions."},
+  {t:"Unknown alarm active; we’ll ‘just try’ a cycle.", ok:false, h:"Investigate and clear alarms before operation."},
+];
+
+// --- DOM refs
+const qText = document.getElementById('qText');
+const qHint = document.getElementById('qHint');
+const btnOK = document.getElementById('btnOK');
+const btnNO = document.getElementById('btnNO');
+const startBtn = document.getElementById('start');
+const restartBtn = document.getElementById('restart');
+const learnBtn = document.getElementById('learn');
+const muteBtn = document.getElementById('mute');
+const timeLeft = document.getElementById('timeLeft');
+const bar = document.getElementById('bar');
+const lamp = document.getElementById('lamp');
+const lampText = document.getElementById('lampText');
+const streakEl = document.getElementById('streak');
+const bestEl = document.getElementById('best');
+const win = document.getElementById('win');
+const playAgain = document.getElementById('playAgain');
+const closeWin = document.getElementById('closeWin');
+
+let current = null;
+let pool = [];
+let streak = 0;
+let best = 0;
+let locked = true;
+let showHints = false;
+let soundOn = true;
+let timer = null;
+let timePerQ = 10; // seconds
+let time = timePerQ;
+
+// --- Audio (Web Audio API)
+const audio = new (window.AudioContext || window.webkitAudioContext)();
+function tone(freq=440, dur=0.12, type='sine', vol=0.05){
+  if(!soundOn) return;
+  const o = audio.createOscillator();
+  const g = audio.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g).connect(audio.destination);
+  o.start();
+  setTimeout(()=>{o.stop()}, dur*1000);
+}
+function correctSound(){
+  tone(880, .08, 'triangle', .06);
+  setTimeout(()=>tone(1175, .10, 'triangle', .06), 90);
+}
+function wrongSound(){
+  tone(180, .14, 'sawtooth', .07);
+  setTimeout(()=>tone(120, .18, 'square', .06), 120);
+}
+
+// --- Helpers
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function nextQuestion(){
+  if(pool.length===0) pool = shuffle(questions);
+  current = pool.pop();
+  qText.textContent = current.t;
+  qHint.textContent = showHints ? "Why: " + current.h : "";
+  setButtons(true);
+  setLamp(true); // keep buzzer on at start of question
+  startTimer();
+}
+function setButtons(enabled){
+  btnOK.disabled = btnNO.disabled = !enabled;
+  locked = !enabled;
+}
+function setLamp(on){
+  lamp.classList.toggle('on', on);
+  lampText.textContent = on ? "ON" : "OFF";
+}
+function updateStreak(v){
+  streak = v;
+  if(streak>best){ best = streak; }
+  streakEl.textContent = streak;
+  bestEl.textContent = best;
+  drawTally();
+  if(streak>=5){ showWin(); }
+}
+function drawTally(){
+  // simple visual tally inside Best chip via title
+  bestEl.parentElement.title = `Best streak: ${best}`;
+}
+function startTimer(){
+  clearInterval(timer);
+  time = timePerQ;
+  timeLeft.textContent = time;
+  bar.style.transform = 'translateX(0%)';
+  const start = performance.now();
+  timer = setInterval(()=>{
+    const elapsed = (performance.now()-start)/1000;
+    const left = Math.max(0, timePerQ - elapsed);
+    timeLeft.textContent = left.toFixed(0);
+    const pct = Math.min(100, (elapsed/timePerQ)*100);
+    bar.style.transform = `translateX(-${pct}%)`;
+    if(left<=0){
+      clearInterval(timer);
+      handleAnswer(null); // timeout = wrong
+    }
+  }, 100);
+}
+function stopTimer(){ clearInterval(timer); }
+
+// --- Game actions
+function handleAnswer(ans){
+  if(locked) return;
+  stopTimer();
+  const isCorrect = (ans===current.ok);
+  if(isCorrect){
+    correctSound();
+    updateStreak(streak+1);
+    setLamp(true); // keep buzzer
+  }else{
+    wrongSound();
+    updateStreak(0);
+    setLamp(false); // lose buzzer
+  }
+  setButtons(false);
+  // small delay before next
+  setTimeout(()=>{
+    if(streak<5) nextQuestion();
+  }, 650);
+}
+function showWin(){
+  win.classList.add('show');
+  setButtons(false);
+}
+function closeModal(){
+  win.classList.remove('show');
+  nextQuestion();
+}
+
+// --- Wiring
+btnOK.addEventListener('click', ()=>handleAnswer(true));
+btnNO.addEventListener('click', ()=>handleAnswer(false));
+startBtn.addEventListener('click', ()=>{
+  if(locked && !current){ // first start
+    updateStreak(0);
+    nextQuestion();
+  }else if(locked){ // between questions
+    nextQuestion();
+  }
+});
+restartBtn.addEventListener('click', ()=>{
+  updateStreak(0);
+  setLamp(false);
+  qHint.textContent = "";
+});
+learnBtn.addEventListener('click', ()=>{
+  showHints = !showHints;
+  learnBtn.textContent = showHints ? "🙈 Hide Why" : "💡 Show Why";
+  if(current){
+    qHint.textContent = showHints ? "Why: " + current.h : "";
+  }
+});
+muteBtn.addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  muteBtn.textContent = soundOn ? "🔊 Sound: On" : "🔈 Sound: Off";
+  if(soundOn && audio.state === 'suspended'){ audio.resume(); }
+});
+
+playAgain.addEventListener('click', ()=>{ win.classList.remove('show'); updateStreak(0); nextQuestion(); });
+closeWin.addEventListener('click', closeModal);
+
+window.addEventListener('keydown', (e)=>{
+  if(e.code === 'Space'){ e.preventDefault(); startBtn.click(); }
+  if(e.key.toLowerCase() === 'a'){ btnOK.click(); }
+  if(e.key.toLowerCase() === 'l'){ btnNO.click(); }
+});
+
+// Ready state
+(function init(){
+  setButtons(false);
+  setLamp(false);
+  qHint.textContent = "";
+})();
+</script>
+</body>
+</html>
