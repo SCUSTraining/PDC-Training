@@ -1,5 +1,4 @@
 ---
-draft: true
 title: "Fault-Response Jeopardy"
 type: game
 description: "Interactive jeopardy board for team play."
