@@ -1,0 +1,7 @@
+title: "Training Resource Hub"
+description: "A hub for all training resources: PDFs, PowerPoints, SCORM, H5P, games, and more."
+theme: minima
+collections:
+  resources:
+    output: true
+    permalink: /resources/:name/
