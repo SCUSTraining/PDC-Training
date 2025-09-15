@@ -1,4 +1,3 @@
-# _resources/Fault_Response_Jeopardy_Interactive.md
 ---
 title: "Fault-Response Jeopardy — Team Board"
 type: html
