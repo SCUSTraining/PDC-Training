@@ -1,4 +1,5 @@
 ---
+---
 const CACHE_NAME = 'fr-gamehub-v6';
 const ASSETS = [
   '{{ "/" | relative_url }}',
@@ -10,16 +11,29 @@ const ASSETS = [
   '{{ "/games/Fault_Response_SOLO_Trainer_30Q_Badges.html" | relative_url }}',
   '{{ "/games/Fault_Response_Jeopardy_Interactive.html" | relative_url }}'
 ];
-self.addEventListener('install', e =>
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)))
-);
-self.addEventListener('activate', e =>
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => k!==CACHE_NAME?caches.delete(k):null))))
-);
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-      const copy = res.clone(); caches.open(CACHE_NAME).then(c => c.put(e.request, copy)); return res;
-    }).catch(() => caches.match('{{ "/index.html" | relative_url }}')))
+
+self.addEventListener('install', event => {
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(k => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(cached =>
+      cached ||
+      fetch(event.request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        return response;
+      }).catch(() => caches.match('{{ "/index.html" | relative_url }}'))
+    )
   );
 });
