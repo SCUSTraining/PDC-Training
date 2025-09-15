@@ -28,7 +28,7 @@ title: "Training Resource Hub"
       <h3>{{ resource.title }}</h3>
       <div class="desc">{{ resource.description }}</div>
       <!-- resource.file should already be baseurl-safe in each _resources/*.md -->
-      <a class="btn" href="{{ resource.file }}" target="_blank" rel="noopener">Open</a>
+      <a class="btn" href="{{ resource.file | relative_url }}" target="_blank" rel="noopener">Open</a>
     </div>
   {% endfor %}
 </div>
