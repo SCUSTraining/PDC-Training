@@ -1,6 +1,4 @@
----
----
-const CACHE_NAME = 'fr-gamehub-v8';
+const CACHE_NAME = 'fr-gamehub-v9'; // bump version to force reload
 const ASSETS = [
   '{{ "/" | relative_url }}',
   '{{ "/index.html" | relative_url }}',
