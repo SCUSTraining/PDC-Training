@@ -1,7 +1,7 @@
 # Fault-Response Game Hub (GitHub Pages)
 
 A tiny static site that hosts the Fault-Response games. Works offline after first load (PWA).
-
+not valid
 ## Deploy (60 seconds)
 1. Create a new repo on GitHub (public or private).
 2. Upload the files in this folder (keep structure).
