@@ -3,6 +3,7 @@ layout: default
 title: "Training Resource Hub"
 ---
 
+<!-- Load custom CSS (baseurl-safe) -->
 <link rel="stylesheet" href="{{ '/assets/css/resources.css' | relative_url }}">
 
 <h1>Training Resource Hub</h1>
@@ -14,9 +15,11 @@ title: "Training Resource Hub"
   <button class="filter-btn" data-type="ppt">PowerPoint</button>
   <button class="filter-btn" data-type="scorm">SCORM</button>
   <button class="filter-btn" data-type="h5p">H5P</button>
+  <!-- Games use type: html in your resource files -->
   <button class="filter-btn" data-type="html">Games</button>
 </div>
 
+<!-- Card grid -->
 <div class="resources-grid" id="resourceGrid">
   {% for resource in site.resources %}
     <div class="resource-card" data-type="{{ resource.type }}">
@@ -30,9 +33,10 @@ title: "Training Resource Hub"
 </div>
 
 <script>
-// Filter bar
+// Simple filter bar
 const filterBtns = document.querySelectorAll('.filter-btn');
 const cards = document.querySelectorAll('.resource-card');
+
 filterBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     filterBtns.forEach(b => b.classList.remove('active'));
@@ -43,4 +47,11 @@ filterBtns.forEach(btn => {
     });
   });
 });
+</script>
+
+<!-- Service worker registration (baseurl-safe) -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('{{ "/service-worker.js" | relative_url }}');
+}
 </script>
