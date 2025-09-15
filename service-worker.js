@@ -1,6 +1,6 @@
 ---
 ---
-const CACHE_NAME = 'fr-gamehub-v4';
+const CACHE_NAME = 'fr-gamehub-v5';
 const ASSETS = [
   '{{ "/" | relative_url }}',
   '{{ "/index.html" | relative_url }}',
