@@ -1,4 +1,3 @@
-# _resources/Fault_Response_SOLO_Trainer_30Q_Badges.md
 ---
 title: "Fault-Response Solo Trainer — 30Q + Badges"
 type: html
