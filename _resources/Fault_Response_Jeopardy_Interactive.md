@@ -1,7 +1,7 @@
 ---
-title: "Fault-Response Jeopardy — Team Board"
+title: "Fault-Response Solo Trainer — 30Q + Badges"
 type: html
-description: "Interactive Jeopardy board: 6 categories × $100–$500, scoring, Daily Doubles, Final."
-file: "/games/Fault_Response_Jeopardy_Interactive.html"
+description: "Timed 30-question exam with Study/Practice modes and category badges."
+file: "/games/Fault_Response_SOLO_Trainer_30Q_Badges.html"
 layout: resource
 ---
