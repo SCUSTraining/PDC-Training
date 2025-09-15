@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HPDC Defect Bingo</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --panel:#111827; /* gray-900 */
+      --ink:#e5e7eb; /* gray-200 */
+      --muted:#9ca3af; /* gray-400 */
+      --accent:#22c55e; /* green-500 */
+      --accent-2:#06b6d4; /* cyan-500 */
+      --warn:#f59e0b; /* amber-500 */
+      --danger:#ef4444; /* red-500 */
+      --card:#1f2937; /* gray-800 */
+      --chip:#334155; /* slate-700 */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#0b1026);color:var(--ink);font-family:system-ui,-apple-system,segui ui,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    a{color:var(--accent-2)}
+    header{position:sticky;top:0;background:rgba(17,24,39,.85);backdrop-filter:blur(6px);z-index:10;border-bottom:1px solid #1f2937}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .brand h1{margin:0;font-weight:800;letter-spacing:.5px;font-size:22px}
+    .subtitle{font-size:12px;color:var(--muted)}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .grow{flex:1 1 360px}
+    .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;padding:16px}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .controls input[type="text"]{background:#0b1022;color:var(--ink);border:1px solid #283042;border-radius:10px;padding:10px 12px;min-width:220px}
+    .btn{border:1px solid #2a3449;background:#10182a;color:var(--ink);padding:10px 12px;border-radius:10px;cursor:pointer;transition:.2s}
+    .btn:hover{transform:translateY(-1px);border-color:#3a4a6a}
+    .btn.primary{background:linear-gradient(180deg,#22c55e,#16a34a);border-color:#16a34a;color:black;font-weight:700}
+    .btn.cyan{background:linear-gradient(180deg,#22d3ee,#06b6d4);border-color:#0891b2;color:black;font-weight:700}
+    .btn.warn{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-color:#b45309;color:black;font-weight:700}
+    .btn.ghost{background:#0b1022}
+
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    .tile{position:relative;background:var(--card);border:1px solid #2a3449;border-radius:14px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+    .tile .head{padding:10px 12px 0 12px;font-weight:700;line-height:1.2}
+    .tile .head small{display:block;color:var(--muted);font-weight:500}
+    .tile .actions{display:flex;gap:8px;padding:10px;align-items:center}
+    .tile .actions .btn{flex:1}
+    .thumb{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.16;filter:grayscale(1)}
+    .complete .thumb{opacity:.45;filter:none}
+    .complete{outline:2px solid var(--accent);box-shadow:0 0 0 2px rgba(34,197,94,.25) inset}
+    .badge{position:absolute;top:8px;right:8px;background:rgba(34,197,94,.95);color:#062e12;font-size:12px;font-weight:800;border-radius:999px;padding:6px 10px;display:none}
+    .complete .badge{display:inline-block}
+    .free{display:grid;place-items:center;font-weight:900;font-size:22px;color:#0b1022;background:linear-gradient(180deg,#a7f3d0,#34d399);border:0}
+
+    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .chip{background:var(--chip);border:1px solid #2a3449;border-radius:999px;padding:6px 10px;font-size:12px}
+
+    .banner{margin-top:12px;padding:12px 14px;border-radius:12px;display:none}
+    .banner.win{display:block;background:linear-gradient(180deg,#22c55e,#16a34a);color:#062e12;border:1px solid #065f46;font-weight:800}
+
+    .library{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .libcard{background:#0b1022;border:1px solid #283042;border-radius:12px;overflow:hidden}
+    .libcard h4{margin:8px 10px;font-size:12px;color:var(--muted)}
+    .libthumb{aspect-ratio:16/10;background:#0e1426;background-size:cover;background-position:center;border-bottom:1px solid #1e2636}
+
+    dialog{border:1px solid #2a3449;border-radius:14px;background:#0b1022;color:var(--ink);padding:0;max-width:680px;width:96%}
+    dialog::backdrop{background:rgba(0,0,0,.55)}
+    .modal-head{padding:14px 16px;border-bottom:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center}
+    .modal-body{padding:14px 16px}
+    .stack{display:grid;gap:6px}
+    .stack li{line-height:1.4}
+    .kbd{display:inline-block;border:1px solid #233049;background:#0b1426;border-radius:6px;padding:2px 6px;font-size:12px}
+    footer{padding:24px 16px;color:#94a3b8;text-align:center}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container row" style="align-items:center;justify-content:space-between">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.88L18.18 22 12 18.56 5.82 22 7 14.15l-5-4.88 6.91-1.01L12 2z" fill="#22c55e"/></svg>
+        <div>
+          <h1>HPDC Defect Bingo</h1>
+          <div class="subtitle">Find real defects, snap photos, learn, and get BINGO.</div>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="sr-only" for="playerName">Your name</label>
+        <input id="playerName" type="text" maxlength="80" placeholder="Type your name…" />
+        <button class="btn primary" id="saveNameBtn" title="Save name">Save Name</button>
+        <button class="btn cyan" id="newCardBtn" title="Shuffle a new card">New Card</button>
+        <button class="btn" id="exportBtn" title="Download a .json proof of your card">Export Card</button>
+        <input id="importInput" class="sr-only" type="file" accept="application/json" />
+        <button class="btn" id="importBtn" title="Load a previously exported .json">Import</button>
+        <button class="btn ghost" id="resetBtn" title="Clear this card (keeps library)">Reset Card</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="row">
+      <section class="panel grow" aria-label="Bingo board">
+        <div class="row" style="align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div id="cardMeta" class="subtitle">Card ID: <span id="cardId"></span> • State saved locally</div>
+            <div class="legend">
+              <span class="chip">Upload a photo to complete a square</span>
+              <span class="chip">Tap <span class="kbd">Learn</span> for causes & prevention</span>
+              <span class="chip">FREE center space auto-completes</span>
+            </div>
+          </div>
+          <button class="btn warn" id="printBtn" title="Print or save as PDF">Print / PDF</button>
+        </div>
+        <div id="board" class="grid" role="grid" aria-label="Bingo grid of defects"></div>
+        <div id="winBanner" class="banner win">BINGO! 🎉 Share your exported card with the trainer to claim a win.</div>
+      </section>
+
+      <aside class="panel grow" aria-label="Knowledge library">
+        <div class="row" style="align-items:center;justify-content:space-between;margin-bottom:8px">
+          <h3 style="margin:0">Knowledge Library</h3>
+          <div class="controls">
+            <input id="libUpload" class="sr-only" type="file" accept="image/*" multiple />
+            <button class="btn" id="addLibBtn" title="Add reference photos for the selected defect">Add Images</button>
+            <button class="btn" id="exportLibBtn" title="Export your library as JSON">Export Library</button>
+            <input id="importLibInput" class="sr-only" type="file" accept="application/json" />
+            <button class="btn" id="importLibBtn" title="Import a library JSON">Import Library</button>
+          </div>
+        </div>
+        <div class="subtitle" id="libHint">Choose a defect tile to see its reference images here.</div>
+        <div id="library" class="library" aria-live="polite"></div>
+      </aside>
+    </div>
+  </main>
+
+  <dialog id="learnDlg" aria-labelledby="learnTitle">
+    <div class="modal-head">
+      <h3 id="learnTitle" style="margin:0"></h3>
+      <button class="btn" id="closeLearn">Close</button>
+    </div>
+    <div class="modal-body">
+      <div id="learnImg" class="libthumb" style="border-radius:10px;margin-bottom:10px"></div>
+      <p id="learnDesc" style="margin-top:0"></p>
+      <h4 style="margin:.5rem 0">Common Causes</h4>
+      <ul id="learnCauses" class="stack"></ul>
+      <h4 style="margin:.5rem 0">Prevention Tips</h4>
+      <ul id="learnFix" class="stack"></ul>
+      <p class="subtitle" style="margin-top:10px">Tip: take clear, well-lit photos that show scale (e.g., include a coin or ruler).</p>
+    </div>
+  </dialog>
+
+  <footer>
+    <div>Built for on-the-floor learning: offline, privacy-friendly, no sign‑in. Save/Export lives in your browser.</div>
+    <div style="margin-top:8px;font-size:12px">This tool supports adult learners with <em>self-direction</em> (choose tiles), <em>relevance</em> (real photos), and <em>retrieval</em> (Learn panels ➜ practice).</div>
+  </footer>
+
+  <!-- Hidden inputs used dynamically per tile upload -->
+  <input id="tileUpload" class="sr-only" type="file" accept="image/*" />
+
+  <script>
+  // ====== Data ======
+  const DEFECTS = [
+    {
+      key:'gas-porosity', name:'Gas Porosity', aka:'Bubbles',
+      desc:'Spherical or elongated voids caused by entrapped air or dissolved hydrogen.',
+      causes:[
+        'Turbulent metal transfer or poor venting allows air to be trapped.',
+        'Moisture, wet tools, or excessive plunger/shot lube add hydrogen to melt.',
+        'Inadequate degassing/filtration of the melt.'
+      ],
+      fix:[
+        'Handle metal gently; avoid cascades and turbulence; use vacuum/venting.',
+        'Preheat and dry all tools; control and minimize lubricants.',
+        'Rotary degas and filter; maintain proper holding furnace practices.'
+      ]
+    },
+    {
+      key:'shrink-porosity', name:'Shrink Porosity', aka:'Micro/Macro',
+      desc:'Voids from solidification shrinkage when liquid cannot feed the last-to-freeze areas.',
+      causes:[
+        'Thick sections far from gates; early gate freeze‑off.',
+        'Low intensification pressure or poor thermal balance.'
+      ],
+      fix:[
+        'Gate to heavier sections; maintain intensification and correct shot setup.',
+        'Balance die temperatures; avoid chill spots that cause premature solidification.'
+      ]
+    },
+    {
+      key:'cold-shut', name:'Cold Shut / Lap',
+      desc:'Two metal fronts meet but fail to fuse; shows a seam-like line.',
+      causes:[
+        'Low melt/shot temperature or slow/uneven flow.',
+        'Premature chilling due to die hot/cold imbalance.'
+      ],
+      fix:[
+        'Raise metal or die temperature; increase metal velocity at gates.',
+        'Adjust gating to avoid opposing fronts; correct thermal control.'
+      ]
+    },
+    { key:'misrun', name:'Misrun / Short Shot',
+      desc:'Cavity not completely filled before metal solidifies.',
+      causes:['Low metal temperature or velocity','Gate/runner too restrictive','Vent/vacuum insufficient'],
+      fix:['Increase temp and fast shot speed','Enlarge gates/runners within limits','Improve venting/vacuum']
+    },
+    { key:'hot-tear', name:'Hot Tear / Crack',
+      desc:'Crack during solidification due to restraint while the casting contracts.',
+      causes:['Poor part geometry (thick-to-thin junctions)','High internal stress; late ejection; uneven cooling'],
+      fix:['Blend sections; add radii','Optimize die temperatures and ejection timing']
+    },
+    { key:'inclusions', name:'Inclusions (Oxides/Dross)',
+      desc:'Non-metallic films or particles embedded in the casting.',
+      causes:['Oxidized skin folded into flow','Dirty melt or eroded die areas','Turbulent transfer/skimming'],
+      fix:['Gently transfer; backstroke skim','Degas and filter; clean furnaces','Repair erosion; optimize gating']
+    },
+    { key:'blister', name:'Blister (Heat Treat/Paint Bake)',
+      desc:'Raised bubbles after heating due to expanding entrapped gas.',
+      causes:['Entrained air/contaminants in as-cast state','Paint-bake or T6 exposes residual gas'],
+      fix:['Use vacuum & robust venting; reduce lube carryover','Improve melt quality and gating to lower porosity']
+    },
+    { key:'soldering', name:'Die Soldering',
+      desc:'Aluminum adheres to die steel, leaving rough surfaces/tearing.',
+      causes:['High die surface temperature; long contact times','Alloy chemistry/die steel interactions'],
+      fix:['Optimize die lube and spray; control die temp','Use proper alloy/Fe/Mn balance; polish/coat die surfaces']
+    },
+    { key:'flow-lines', name:'Flow Lines / Cold Flow',
+      desc:'Visible lines that map metal fronts; often cosmetic.',
+      causes:['Metal cooling during flow; slow velocity','Uneven die temperatures'],
+      fix:['Increase gate velocity or temp','Improve die thermal balance']
+    },
+    { key:'flash', name:'Flash (Parting/Ejector)',
+      desc:'Thin fin at parting or ejector pins from metal leakage.',
+      causes:['Insufficient clamp force; die wear/misalignment','High cavity pressure/excessive intensification'],
+      fix:['Increase clamp force; maintain die locks & fit','Tune shot profile; repair wear']
+    },
+    { key:'jetting', name:'Jetting / Folds',
+      desc:'High-speed jet impinges and folds over, trapping oxide.',
+      causes:['Gate aims directly onto wall or obstacle','Excessive gate velocity, poor runner design'],
+      fix:['Re-aim/fan gates for laminar spread','Tune velocity; add overflows/relief']
+    },
+    { key:'erosion', name:'Erosion / Wash',
+      desc:'Localized die or core wear produces roughness/inclusions.',
+      causes:['High-velocity impingement; inadequate coating','Abrasive inclusions in melt'],
+      fix:['Re-orient gates; improve die coatings','Filter melt; reduce turbulence']
+    },
+    { key:'sticking', name:'Sticking / Poor Release',
+      desc:'Part clings to die; scuffs or tears on ejection.',
+      causes:['Low/loss of release agent; low draft; rough die','Uneven die temp causing seizure'],
+      fix:['Restore lube; ensure draft/polish; add texturing','Balance die cooling; adjust ejection sequence']
+    },
+    { key:'shift', name:'Die Mismatch / Shift',
+      desc:'Offset across parting due to misalignment.',
+      causes:['Worn guide pins/locks; debris; improper setup'],
+      fix:['Repair/replace pins/locks; clean and set die properly']
+    },
+    { key:'warpage', name:'Warpage / Distortion',
+      desc:'Part is bowed or twisted after ejection or heat.',
+      causes:['Uneven cooling; thin ribs next to thick bosses','Premature ejection; residual stresses'],
+      fix:['Balance cooling; redesign for uniform sections','Adjust solidification time; straighten fixturing']
+    },
+    { key:'leakers', name:'Leakers (Pressure Fail)',
+      desc:'Casting fails leak test from connected porosity or cracks.',
+      causes:['Gas or shrink porosity chains; cold shuts','Thin walls away from gates'],
+      fix:['Improve vacuum/venting and gating toward thick zones','Adjust speed/temp; intensify adequately']
+    },
+    { key:'surface-por', name:'Surface Porosity',
+      desc:'Near-surface voids affect cosmetic finish and coatings.',
+      causes:['Excess lube or moisture; blocked vents','Oxides folded at the surface'],
+      fix:['Reduce lube; dry tools; clean vents','Improve runner/overflow to pull films away']
+    },
+    { key:'drag', name:'Drag Marks / Galling',
+      desc:'Scratches from friction during ejection.',
+      causes:['Low draft or rough die steel; dry spots','Pins out of timing; hotspots'],
+      fix:['Polish and add draft; restore lube','Time pins; balance cooling']
+    },
+    { key:'sink', name:'Shrink Cavity / Sink',
+      desc:'Local depressions over heavy sections; internal voids.',
+      causes:['Thick areas far from feed; early gate freeze'],
+      fix:['Gate to heavy zones; keep intensification until solid','Blend thick-to-thin transitions']
+    },
+    { key:'gate-freeze', name:'Gate Freeze-Off',
+      desc:'Gate solidifies too early; starves cavity feed.',
+      causes:['Gate too thin/long; low die/melt temp'],
+      fix:['Thicken/shorten gate; raise temp within limits']
+    },
+    { key:'biscuit-voids', name:'Shot Sleeve / Biscuit Issues',
+      desc:'Air in shot sleeve carried into cavity; void trails.',
+      causes:['Poor pour ladle position; low fill ratio','No backstroke skim; turbulence at pour'],
+      fix:['Set proper pour point/fill ratio; backstroke skim','Use launder/cover; stabilize pour']
+    },
+    { key:'splay', name:'Spray Stain / Splay',
+      desc:'Lube residue marks or gas streaks on surface.',
+      causes:['Over‑spray; lube pooling; wet cavity'],
+      fix:['Reduce/target spray; allow dry time; improve exhaust']
+    },
+    { key:'brittle', name:'Brittle Fracture',
+      desc:'Low elongation fracture during trim or use.',
+      causes:['High iron/impurities; oxides; porosity','Inadequate heat treatment (structural)'],
+      fix:['Improve melt quality; vacuum; chemistry control','Use proper alloy/HT for structural parts']
+    },
+    { key:'die-wear', name:'Die Wear / Parting Line',
+      desc:'Persistent flash/step from worn seal-offs/parting.',
+      causes:['Erosion and mechanical wear over life'],
+      fix:['Rework die: weld/stone fit surfaces; maintain clamps']
+    }
+  ];
+
+  const FREE_TILE = { key:'free', name:'FREE', desc:'Community or safety moment', free:true };
+
+  // ====== State ======
+  let layout = []; // 25 items (including free)
+  let photos = {}; // key -> dataURL
+  let library = {}; // key -> [dataURL]
+  let selectedKey = null; // for library add
+
+  // ====== Helpers ======
+  const $ = sel => document.querySelector(sel);
+  const uid = () => Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+  const saveLocal = () => {
+    localStorage.setItem('hpdcBingoLayout', JSON.stringify(layout));
+    localStorage.setItem('hpdcBingoPhotos', JSON.stringify(photos));
+    localStorage.setItem('hpdcBingoLibrary', JSON.stringify(library));
+  };
+  const loadLocal = () => {
+    try{
+      layout = JSON.parse(localStorage.getItem('hpdcBingoLayout')||'[]');
+      photos = JSON.parse(localStorage.getItem('hpdcBingoPhotos')||'{}');
+      library = JSON.parse(localStorage.getItem('hpdcBingoLibrary')||'{}');
+    }catch{layout=[];photos={};library={}}
+  };
+  const getDef = key => key==='free'?FREE_TILE:DEFECTS.find(d=>d.key===key);
+
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    return a;
+  }
+
+  function newCard(){
+    const keys = shuffle(DEFECTS).slice(0,24).map(d=>d.key);
+    // Insert FREE in center
+    layout = [...keys.slice(0,12), 'free', ...keys.slice(12)];
+    photos = {}; // clear photos for new layout
+    saveLocal();
+    drawBoard();
+    $('#winBanner').classList.remove('win');
+    setCardId();
+  }
+
+  function setCardId(){
+    let id = localStorage.getItem('hpdcBingoCardId');
+    if(!id){ id = uid(); localStorage.setItem('hpdcBingoCardId', id); }
+    $('#cardId').textContent = id;
+  }
+
+  function drawBoard(){
+    const board = $('#board');
+    board.innerHTML = '';
+    layout.forEach((key, idx)=>{
+      const def = getDef(key);
+      const tile = document.createElement('div');
+      tile.role='gridcell';
+      tile.className = 'tile'+(def.free?' free':'');
+      tile.dataset.key = key;
+      tile.dataset.index = idx;
+
+      if(def.free){
+        tile.innerHTML = '<div class="head" style="text-align:center">FREE</div>';
+        tile.classList.add('complete');
+        const badge = document.createElement('div');
+        badge.className='badge';
+        badge.textContent='Done';
+        tile.appendChild(badge);
+      } else {
+        const head = document.createElement('div');
+        head.className='head';
+        head.innerHTML = `${def.name}${def.aka?`<small>aka: ${def.aka}</small>`:''}`;
+        tile.appendChild(head);
+
+        const thumb = document.createElement('div');
+        thumb.className='thumb';
+        thumb.style.backgroundImage = photos[key] ? `url(${photos[key]})` : 'none';
+        tile.appendChild(thumb);
+
+        const badge = document.createElement('div');
+        badge.className='badge';
+        badge.textContent='Photo ✓';
+        tile.appendChild(badge);
+
+        const actions = document.createElement('div');
+        actions.className='actions';
+        const upBtn = document.createElement('button');
+        upBtn.className='btn';
+        upBtn.textContent = photos[key]? 'Replace Photo' : 'Upload Photo';
+        upBtn.addEventListener('click', ()=>pickPhoto(key));
+        const learnBtn = document.createElement('button');
+        learnBtn.className='btn';
+        learnBtn.textContent='Learn';
+        learnBtn.addEventListener('click', ()=>openLearn(def, key));
+        actions.append(upBtn, learnBtn);
+        tile.appendChild(actions);
+
+        tile.addEventListener('click', ()=>{ selectedKey = key; renderLibrary(); });
+
+        if(photos[key]) tile.classList.add('complete');
+      }
+      board.appendChild(tile);
+    });
+    checkBingo();
+  }
+
+  function pickPhoto(key){
+    const input = $('#tileUpload');
+    input.onchange = async (e)=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const dataURL = await toDataURL(file);
+      photos[key] = dataURL;
+      saveLocal();
+      drawBoard();
+    };
+    input.click();
+  }
+
+  function toDataURL(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    })
+  }
+
+  function openLearn(def, key){
+    selectedKey = key;
+    $('#learnTitle').textContent = def.name;
+    $('#learnImg').style.backgroundImage = (library[key] && library[key][0])? `url(${library[key][0]})` : 'linear-gradient(180deg,#111827,#0b1022)';
+    $('#learnDesc').textContent = def.desc;
+    const causes = $('#learnCauses');
+    const fix = $('#learnFix');
+    causes.innerHTML = '';
+    fix.innerHTML = '';
+    def.causes.forEach(c=>{ const li=document.createElement('li'); li.textContent=c; causes.appendChild(li)});
+    def.fix.forEach(c=>{ const li=document.createElement('li'); li.textContent=c; fix.appendChild(li)});
+    $('#learnDlg').showModal();
+    renderLibrary();
+  }
+
+  function renderLibrary(){
+    const wrap = $('#library');
+    const hint = $('#libHint');
+    wrap.innerHTML = '';
+    if(!selectedKey){ hint.textContent = 'Choose a defect tile to see its reference images here.'; return; }
+    const def = getDef(selectedKey);
+    hint.textContent = `Reference images for: ${def.name}`;
+    const arr = library[selectedKey] || [];
+    if(arr.length===0){
+      const empty = document.createElement('div');
+      empty.className='subtitle';
+      empty.textContent='No images yet. Click “Add Images” to upload examples for this defect.';
+      wrap.appendChild(empty);
+    } else {
+      arr.forEach((src,i)=>{
+        const card = document.createElement('div');
+        card.className='libcard';
+        const img = document.createElement('div');
+        img.className='libthumb';
+        img.style.backgroundImage=`url(${src})`;
+        const h4 = document.createElement('h4');
+        h4.textContent=`#${i+1}`;
+        card.append(img,h4);
+        wrap.appendChild(card);
+      })
+    }
+  }
+
+  function exportCard(){
+    const payload = {
+      version:1,
+      id: localStorage.getItem('hpdcBingoCardId')||'unknown',
+      name: $('#playerName').value||'',
+      layout,
+      photos,
+      timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `hpdc-bingo-${payload.id}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importCard(file){
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        if(Array.isArray(data.layout) && data.photos){
+          layout = data.layout;
+          photos = data.photos;
+          saveLocal();
+          drawBoard();
+          if(data.name) $('#playerName').value = data.name;
+        } else alert('Invalid card file');
+      }catch{ alert('Invalid JSON') }
+    };
+    reader.readAsText(file);
+  }
+
+  function exportLibrary(){
+    const name = $('#playerName').value || 'library';
+    const blob = new Blob([JSON.stringify({version:1,library},null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `hpdc-bingo-${name}-library.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importLibraryFile(file){
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        if(data && data.library){ library = data.library; saveLocal(); renderLibrary(); }
+        else alert('Invalid library file');
+      }catch{ alert('Invalid JSON') }
+    };
+    reader.readAsText(file);
+  }
+
+  function addImagesToLibrary(files){
+    if(!selectedKey){ alert('Select a defect tile first'); return; }
+    const list = Array.from(files||[]);
+    if(list.length===0) return;
+    Promise.all(list.map(f=>toDataURL(f))).then(ds=>{
+      library[selectedKey] = (library[selectedKey]||[]).concat(ds);
+      saveLocal();
+      renderLibrary();
+    })
+  }
+
+  function checkBingo(){
+    // true if row/col/diag all complete (including FREE)
+    const completeAt = idx => {
+      const key = layout[idx];
+      return key==='free' || Boolean(photos[key]);
+    };
+    const lines = [];
+    // rows
+    for(let r=0;r<5;r++){ lines.push([0,1,2,3,4].map(c=>r*5+c)); }
+    // cols
+    for(let c=0;c<5;c++){ lines.push([0,1,2,3,4].map(r=>r*5+c)); }
+    // diags
+    lines.push([0,6,12,18,24]);
+    lines.push([4,8,12,16,20]);
+
+    let win = false;
+    lines.forEach(line=>{
+      const ok = line.every(i=>completeAt(i));
+      if(ok){
+        win = true;
+        // highlight tiles
+        line.forEach(i=>{
+          const cell = $('#board').children[i];
+          cell.style.outline = '3px solid var(--accent-2)';
+          cell.style.boxShadow = '0 0 0 2px rgba(6,182,212,.35) inset';
+        })
+      }
+    })
+    if(win) $('#winBanner').classList.add('win');
+  }
+
+  function printCard(){
+    window.print();
+  }
+
+  // ====== Events ======
+  $('#newCardBtn').addEventListener('click', newCard);
+  $('#exportBtn').addEventListener('click', exportCard);
+  $('#importBtn').addEventListener('click', ()=>$('#importInput').click());
+  $('#importInput').addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) importCard(f); e.target.value=''; });
+  $('#saveNameBtn').addEventListener('click', ()=>{ localStorage.setItem('hpdcBingoName', $('#playerName').value||''); alert('Saved!'); });
+  $('#resetBtn').addEventListener('click', ()=>{ if(confirm('Clear all photos on this card?')){ photos={}; saveLocal(); drawBoard(); $('#winBanner').classList.remove('win'); }});
+  $('#printBtn').addEventListener('click', printCard);
+
+  $('#closeLearn').addEventListener('click', ()=>$('#learnDlg').close());
+
+  $('#addLibBtn').addEventListener('click', ()=>$('#libUpload').click());
+  $('#libUpload').addEventListener('change', e=>{ addImagesToLibrary(e.target.files); e.target.value=''; });
+  $('#exportLibBtn').addEventListener('click', exportLibrary);
+  $('#importLibBtn').addEventListener('click', ()=>$('#importLibInput').click());
+  $('#importLibInput').addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) importLibraryFile(f); e.target.value=''; });
+
+  // ====== Init ======
+  (function init(){
+    setCardId();
+    loadLocal();
+    const savedName = localStorage.getItem('hpdcBingoName')||'';
+    if(savedName) $('#playerName').value = savedName;
+    if(layout.length!==25){ newCard(); }
+    else drawBoard();
+  })();
+  </script>
+</body>
+</html>
