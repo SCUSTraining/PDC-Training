@@ -2,6 +2,6 @@
 title: "Fault-Response Jeopardy — Team Board"
 type: html
 description: "Interactive Jeopardy board: 6 categories × $100–$500, scoring, Daily Doubles, Final."
-{{ site.baseurl }}/games/Fault_Response_Jeopardy_Interactive.html"
+file: "{{ site.baseurl }}/games/Fault_Response_Jeopardy_Interactive.html"
 layout: resource
 ---
