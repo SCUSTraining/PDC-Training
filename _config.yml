@@ -1,7 +1,17 @@
 title: "Training Resource Hub"
 description: "A hub for all training resources: PDFs, PowerPoints, SCORM, H5P, games, and more."
 theme: minima
+
+# Project Pages settings (repo name = PDC-Training)
+url: "https://scustraining.github.io"
+baseurl: "/PDC-Training"
+
 collections:
   resources:
     output: true
     permalink: /resources/:name/
+
+# (optional) auto-apply a layout to resources entries
+defaults:
+  - scope: { path: "", type: "resources" }
+    values: { layout: resource }
